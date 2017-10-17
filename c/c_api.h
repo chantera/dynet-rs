@@ -67,6 +67,11 @@ int CDim_size(CDim* d);
  */
 
 
+real C_as_scalar(const CTensor* t);
+
+real* C_as_vector(const CTensor* v);
+
+
 // ---------------- declarations from model.h ----------------
 
 /**
@@ -95,7 +100,7 @@ void CLookupParameter_delete(CLookupParameter* p);
 
 void CLookupParameter_zero(CLookupParameter* p);
 
-CDim CLookupParameter_dim(CLookupParameter* p);
+CDim* CLookupParameter_dim(CLookupParameter* p);
 
 CTensor* CLookupParameter_values(CLookupParameter* p);
 
@@ -114,10 +119,10 @@ float CParameterCollection_gradient_l2_norm(CParameterCollection* pc);
 
 void CParameterCollection_reset_gradient(CParameterCollection* pc);
 
-CParameter CParameterCollection_add_parameters(CParameterCollection* pc,
+CParameter* CParameterCollection_add_parameters(CParameterCollection* pc,
                                                const CDim* d);
 
-CLookupParameter CParameterCollection_add_lookup_parameters(
+CLookupParameter* CParameterCollection_add_lookup_parameters(
     CParameterCollection* pc, unsigned n, const CDim* d);
 
 
@@ -147,16 +152,18 @@ void CComputationGraph_backward(CComputationGraph* g, const CExpression* last);
 
 // ---------------- declarations from expr.h ----------------
 
-CExpression C_input(CComputationGraph* g, real s);
-CExpression C_parameter(CComputationGraph* g, CParameter* p);
-CExpression C_lookup_parameter(CComputationGraph* g, CLookupParameter* p);
+CExpression* C_input_scalar(CComputationGraph* g, real s);
+CExpression* C_input_vector(CComputationGraph* g, const CDim* d,
+                            const float* data);
+CExpression* C_parameter(CComputationGraph* g, CParameter* p);
+CExpression* C_lookup_parameter(CComputationGraph* g, CLookupParameter* p);
 
-CExpression C_op_add(const CExpression* x, const CExpression* y);
-CExpression C_op_mul(const CExpression* x, const CExpression* y);
+CExpression* C_op_add(const CExpression* x, const CExpression* y);
+CExpression* C_op_mul(const CExpression* x, const CExpression* y);
 
-CExpression C_tanh(const CExpression* x);
+CExpression* C_tanh(const CExpression* x);
 
-CExpression C_squared_distance(const CExpression* x, const CExpression* y);
+CExpression* C_squared_distance(const CExpression* x, const CExpression* y);
 
 
 #ifdef __cplusplus

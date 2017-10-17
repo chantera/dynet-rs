@@ -1,6 +1,9 @@
 extern crate libc;
 extern crate dynet_sys as dy;
 
+use std::ops;
+// use std::slice;
+
 
 macro_rules! impl_new {
   ($name:ident, $call:ident) => {
@@ -43,13 +46,19 @@ impl Dim {
         
     }
     */
-}
 
-impl<'a> From<&'a [i64]> for Dim {
-    fn from(x: &'a [i64]) -> Self {
+    pub fn from_slice(x: &[u64]) -> Self {
         unsafe { Dim { inner: dy::CDim_new_from_array(x.as_ptr() as *const _) } }
     }
 }
+
+/*
+impl<'a, T> From<&'a [T]> for Dim {
+    fn from(x: &'a [T]) -> Self {
+        unsafe { Dim { inner: dy::CDim_new_from_array(x.as_ptr() as *const _) } }
+    }
+}
+*/
 
 
 #[derive(Debug)]
@@ -58,6 +67,36 @@ pub struct Tensor {
 }
 
 // impl_drop!(Tensor, CTensor_delete);
+
+
+pub fn as_scalar(t: Tensor) -> f32 {
+    unsafe { dy::C_as_scalar(t.inner) }
+}
+
+/*
+pub fn as_vector(t: Tensor) -> Vec<f32> {
+    // dy::C_as_vector(t.inner).to_vec()
+    slice::from_raw_parts_mut(*(dy::C_as_vector(t.inner)
+    // Vec::from())
+    let slice = unsafe { slice::from_raw_parts(some_pointer, len) };
+}
+*/
+
+/*
+impl<T: TensorType> AsRef<[T]> for Buffer<T> {
+    #[inline]
+    fn as_ref(&self) -> &[T] {
+        unsafe { slice::from_raw_parts(self.data(), (*self.inner).length) }
+    }
+}
+
+impl<T: TensorType> AsMut<[T]> for Buffer<T> {
+    #[inline]
+    fn as_mut(&mut self) -> &mut [T] {
+        unsafe { slice::from_raw_parts_mut(self.data_mut(), (*self.inner).length) }
+    }
+}
+*/
 
 
 #[derive(Debug)]
@@ -82,6 +121,16 @@ pub struct ParameterCollection {
 impl_new!(ParameterCollection, CParameterCollection_new);
 impl_drop!(ParameterCollection, CParameterCollection_delete);
 
+impl ParameterCollection {
+    pub fn add_parameters(&mut self, d: &Dim) -> Parameter {
+        unsafe {
+            Parameter {
+                inner: dy::CParameterCollection_add_parameters(self.inner, d.inner) as *mut _,
+            }
+        }
+    }
+}
+
 
 #[derive(Debug)]
 pub struct ComputationGraph {
@@ -95,17 +144,47 @@ impl ComputationGraph {
     pub fn forward(&mut self, last: &Expression) -> Tensor {
         unsafe { Tensor { inner: dy::CComputationGraph_forward(self.inner, last.inner) as *mut _ } }
     }
+
+    pub fn backward(&mut self, last: &Expression) {
+        unsafe {
+            dy::CComputationGraph_backward(self.inner, last.inner);
+        }
+    }
 }
 
 
-pub fn input(g: &mut ComputationGraph, s: f32) -> Expression {
-    unsafe { Expression { inner: &mut dy::C_input(g.inner, s) } }
+pub fn input_scalar(g: &mut ComputationGraph, s: f32) -> Expression {
+    unsafe { Expression { inner: dy::C_input_scalar(g.inner, s) as *mut _ } }
+}
+
+pub fn input_vector(g: &mut ComputationGraph, d: &Dim, data: &Vec<f32>) -> Expression {
+    unsafe { Expression { inner: dy::C_input_vector(g.inner, d.inner, data.as_ptr()) as *mut _ } }
 }
 
 pub fn parameter(g: &mut ComputationGraph, p: &mut Parameter) -> Expression {
-    unsafe { Expression { inner: &mut dy::C_parameter(g.inner, p.inner) } }
+    unsafe { Expression { inner: dy::C_parameter(g.inner, p.inner) as *mut _ } }
+}
+
+impl ops::Add for Expression {
+    type Output = Expression;
+
+    fn add(self, rhs: Expression) -> Expression {
+        unsafe { Expression { inner: dy::C_op_add(self.inner, rhs.inner) } }
+    }
+}
+
+impl ops::Mul for Expression {
+    type Output = Expression;
+
+    fn mul(self, rhs: Expression) -> Expression {
+        unsafe { Expression { inner: dy::C_op_mul(self.inner, rhs.inner) } }
+    }
+}
+
+pub fn tanh(x: &Expression) -> Expression {
+    unsafe { Expression { inner: dy::C_tanh(x.inner) as *mut _ } }
 }
 
 pub fn squared_distance(x: &Expression, y: &Expression) -> Expression {
-    unsafe { Expression { inner: &mut dy::C_squared_distance(x.inner, y.inner) } }
+    unsafe { Expression { inner: dy::C_squared_distance(x.inner, y.inner) as *mut _ } }
 }

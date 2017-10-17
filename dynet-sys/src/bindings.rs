@@ -60,6 +60,13 @@ extern "C" {
     pub fn CDim_size(d: *mut CDim) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    /// Tensor
+    pub fn C_as_scalar(t: *const CTensor) -> real;
+}
+extern "C" {
+    pub fn C_as_vector(v: *const CTensor) -> *mut real;
+}
+extern "C" {
     /// Parameter
     pub fn CParameter_new() -> *mut CParameter;
 }
@@ -92,7 +99,7 @@ extern "C" {
     pub fn CLookupParameter_zero(p: *mut CLookupParameter);
 }
 extern "C" {
-    pub fn CLookupParameter_dim(p: *mut CLookupParameter) -> CDim;
+    pub fn CLookupParameter_dim(p: *mut CLookupParameter) -> *mut CDim;
 }
 extern "C" {
     pub fn CLookupParameter_values(p: *mut CLookupParameter) -> *mut CTensor;
@@ -120,7 +127,8 @@ extern "C" {
 }
 extern "C" {
     pub fn CParameterCollection_add_parameters(pc: *mut CParameterCollection,
-                                               d: *const CDim) -> CParameter;
+                                               d: *const CDim)
+     -> *mut CParameter;
 }
 extern "C" {
     pub fn CParameterCollection_add_lookup_parameters(pc:
@@ -128,7 +136,7 @@ extern "C" {
                                                       n:
                                                           ::std::os::raw::c_uint,
                                                       d: *const CDim)
-     -> CLookupParameter;
+     -> *mut CLookupParameter;
 }
 extern "C" {
     /// ComputationGraph
@@ -147,30 +155,35 @@ extern "C" {
                                       last: *const CExpression);
 }
 extern "C" {
-    pub fn C_input(g: *mut CComputationGraph, s: real) -> CExpression;
+    pub fn C_input_scalar(g: *mut CComputationGraph, s: real)
+     -> *mut CExpression;
+}
+extern "C" {
+    pub fn C_input_vector(g: *mut CComputationGraph, d: *const CDim,
+                          data: *const f32) -> *mut CExpression;
 }
 extern "C" {
     pub fn C_parameter(g: *mut CComputationGraph, p: *mut CParameter)
-     -> CExpression;
+     -> *mut CExpression;
 }
 extern "C" {
     pub fn C_lookup_parameter(g: *mut CComputationGraph,
-                              p: *mut CLookupParameter) -> CExpression;
+                              p: *mut CLookupParameter) -> *mut CExpression;
 }
 extern "C" {
     pub fn C_op_add(x: *const CExpression, y: *const CExpression)
-     -> CExpression;
+     -> *mut CExpression;
 }
 extern "C" {
     pub fn C_op_mul(x: *const CExpression, y: *const CExpression)
-     -> CExpression;
+     -> *mut CExpression;
 }
 extern "C" {
-    pub fn C_tanh(x: *const CExpression) -> CExpression;
+    pub fn C_tanh(x: *const CExpression) -> *mut CExpression;
 }
 extern "C" {
     pub fn C_squared_distance(x: *const CExpression, y: *const CExpression)
-     -> CExpression;
+     -> *mut CExpression;
 }
 extern "C" {
     pub fn hello();

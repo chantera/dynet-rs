@@ -47,7 +47,6 @@ pub struct CExpression {
     _unused: [u8; 0],
 }
 extern "C" {
-    /// Dim
     pub fn CDim_new() -> *mut CDim;
 }
 extern "C" {
@@ -60,14 +59,12 @@ extern "C" {
     pub fn CDim_size(d: *mut CDim) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    /// Tensor
     pub fn C_as_scalar(t: *const CTensor) -> real;
 }
 extern "C" {
     pub fn C_as_vector(v: *const CTensor) -> *mut real;
 }
 extern "C" {
-    /// Parameter
     pub fn CParameter_new() -> *mut CParameter;
 }
 extern "C" {
@@ -89,7 +86,6 @@ extern "C" {
     pub fn CParameter_is_updated(p: *mut CParameter) -> bool_;
 }
 extern "C" {
-    /// LookupParameter
     pub fn CLookupParameter_new() -> *mut CLookupParameter;
 }
 extern "C" {
@@ -111,7 +107,6 @@ extern "C" {
     pub fn CLookupParameter_is_updated(p: *mut CLookupParameter) -> bool_;
 }
 extern "C" {
-    /// ParameterCollection
     pub fn CParameterCollection_new() -> *mut CParameterCollection;
 }
 extern "C" {
@@ -139,7 +134,6 @@ extern "C" {
      -> *mut CLookupParameter;
 }
 extern "C" {
-    /// ComputationGraph
     pub fn CComputationGraph_new() -> *mut CComputationGraph;
 }
 extern "C" {

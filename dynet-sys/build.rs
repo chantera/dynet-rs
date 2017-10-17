@@ -1,31 +1,48 @@
 extern crate bindgen;
 
 use std::env;
+use std::error::Error;
+use std::result::Result;
+use std::process::exit;
 
 fn main() {
-    // println!("cargo:rustc-link-lib=dylib=dynet");
-    // println!("cargo:rustc-link-search={}", env::var("DYNET_INCLUDE_DIR"));
+    exit(match build() {
+        Ok(_) => 0,
+        Err(e) => {
+            println!("{}", e);
+            1
+        }
+    })
+}
+
+fn build() -> Result<(), Box<Error>> {
+    let lib_dir = try!(env::var("DYNET_LIBRARY_DIR").map_err(|e| {
+        format!(
+            "{}: Run with `DYNET_LIBRARY_DIR=/path/to/lib`",
+            e.to_string()
+        )
+    }));
+    let include_dir = try!(env::var("DYNET_INCLUDE_DIR").map_err(|e| {
+        format!(
+            "{}: Run with `DYNET_INCLUDE_DIR=/path/to/include`",
+            e.to_string()
+        )
+    }));
+
+    println!("cargo:rustc-link-lib=dylib=dynet");
+    println!("cargo:rustc-link-search={}", lib_dir);
+    println!("cargo:include={}", include_dir);
 
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")
-        // .clang_arg("-I/../c")
-        .clang_arg("-I/Users/hiroki/Desktop/dynet-rs/c")
-        .clang_arg(format!("-I/{}", env::var("DYNET_INCLUDE_DIR").unwrap()))
-        // // .clang_arg(format!("-I/{}", env::var("EIGEN_INCLUDE_DIR").unwrap()))
-        // .clang_arg("-mmacosx-version-min=10.7")
-        // .clang_arg("-x")
-        // .clang_arg("c++")
-        // .clang_arg("-std=c++11")
-        // .clang_arg("-stdlib=libc++")
-        // .use_core()
-        // .raw_line(r#"extern crate core;"#)
-        // // .opaque_type("std::.*")
-        // .opaque_type("std::string")
-        // .rustfmt_bindings(true)
+        .clang_arg("-I../c")
+        .rustfmt_bindings(false)
+        .generate_comments(false)
         .generate()
         .expect("Unable to generate bindings");
 
     bindings.write_to_file("src/bindings.rs").expect(
         "Couldn't write bindings!",
     );
+    Ok(())
 }

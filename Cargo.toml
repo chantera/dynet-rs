@@ -1,0 +1,11 @@
+[package]
+name = "dynet"
+version = "0.1.0"
+authors = ["Hiroki Teranishi <teranishihiroki@gmail.com>"]
+
+[dependencies]
+libc = "0.2"
+dynet-sys = { path = "dynet-sys" }
+
+[[example]]
+name = "xor"

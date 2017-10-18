@@ -29,13 +29,13 @@ fn build() -> Result<(), Box<Error>> {
         )
     }));
 
-    println!("cargo:rustc-link-lib=dylib=dynet");
+    println!("cargo:rustc-link-lib=static=dynetc");
     println!("cargo:rustc-link-search={}", lib_dir);
-    println!("cargo:include={}", include_dir);
+    // println!("cargo:include={}", include_dir);
 
     let bindings = bindgen::Builder::default()
-        .header("wrapper.h")
-        .clang_arg("-I../c")
+        .header("../c/dynetc/c_api.h")
+        // .clang_arg("-I../c")
         .rustfmt_bindings(false)
         .generate_comments(false)
         .generate()

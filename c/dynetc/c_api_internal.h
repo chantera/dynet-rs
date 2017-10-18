@@ -1,17 +1,15 @@
-#ifndef DYNET_C_C_API_INTERNAL_H_
-#define DYNET_C_C_API_INTERNAL_H_
+/* Copyright 2017 Hiroki Teranishi. All rights reserved. */
 
-#include "c_api.h"
+#ifndef DYNETC_C_API_INTERNAL_H_
+#define DYNETC_C_API_INTERNAL_H_
+
+#include "dynetc/c_api.h"
 
 #include "dynet/dynet.h"
 #include "dynet/dim.h"
-#include <dynet/expr.h>
-#include <dynet/model.h>
+#include "dynet/expr.h"
+#include "dynet/model.h"
 #include "dynet/tensor.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 struct CDynetParams {
   dynet::DynetParams params;
@@ -41,14 +39,4 @@ struct CComputationGraph {
   dynet::ComputationGraph graph;
 };
 
-struct CExpression {
-  dynet::Expression expr;
-};
-
-
-#ifdef __cplusplus
-} /* end extern "C" */
-#endif
-
-void hello();
-#endif  // DYNET_C_C_API_INTERNAL_H_
+#endif  // DYNETC_C_API_INTERNAL_H_

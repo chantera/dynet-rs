@@ -154,22 +154,22 @@ impl ComputationGraph {
 
 
 pub fn input_scalar(g: &mut ComputationGraph, s: f32) -> Expression {
-    unsafe { Expression { inner: dy::C_input_scalar(g.inner, s) as *mut _ } }
+    unsafe { Expression { inner: &mut dy::C_input_scalar(g.inner, s) } }
 }
 
 pub fn input_vector(g: &mut ComputationGraph, d: &Dim, data: &Vec<f32>) -> Expression {
-    unsafe { Expression { inner: dy::C_input_vector(g.inner, d.inner, data.as_ptr()) as *mut _ } }
+    unsafe { Expression { inner: &mut dy::C_input_vector(g.inner, d.inner, data.as_ptr()) } }
 }
 
 pub fn parameter(g: &mut ComputationGraph, p: &mut Parameter) -> Expression {
-    unsafe { Expression { inner: dy::C_parameter(g.inner, p.inner) as *mut _ } }
+    unsafe { Expression { inner: &mut dy::C_parameter(g.inner, p.inner) } }
 }
 
 impl ops::Add for Expression {
     type Output = Expression;
 
     fn add(self, rhs: Expression) -> Expression {
-        unsafe { Expression { inner: dy::C_op_add(self.inner, rhs.inner) } }
+        unsafe { Expression { inner: &mut dy::C_op_add(self.inner, rhs.inner) } }
     }
 }
 
@@ -177,14 +177,15 @@ impl ops::Mul for Expression {
     type Output = Expression;
 
     fn mul(self, rhs: Expression) -> Expression {
-        unsafe { Expression { inner: dy::C_op_mul(self.inner, rhs.inner) } }
+        unsafe { Expression { inner: &mut dy::C_op_mul(self.inner, rhs.inner) } }
     }
 }
 
 pub fn tanh(x: &Expression) -> Expression {
-    unsafe { Expression { inner: dy::C_tanh(x.inner) as *mut _ } }
+    unsafe { Expression { inner: &mut dy::C_tanh(x.inner) } }
 }
 
 pub fn squared_distance(x: &Expression, y: &Expression) -> Expression {
-    unsafe { Expression { inner: dy::C_squared_distance(x.inner, y.inner) as *mut _ } }
+    unsafe { Expression { inner: &mut dy::C_squared_distance(x.inner, y.inner) } }
+}
 }

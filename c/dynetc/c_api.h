@@ -1,6 +1,10 @@
-#ifndef DYNET_C_C_API_H_
-#define DYNET_C_C_API_H_
+/* Copyright 2017 Hiroki Teranishi. All rights reserved. */
 
+#ifndef DYNETC_C_API_H_
+#define DYNETC_C_API_H_
+
+#include <stddef.h>  // NOLINT
+#include <stdint.h>  // NOLINT
 
 #ifndef __bool_true_false_are_defined
 #define __bool_true_false_are_defined 1
@@ -17,12 +21,9 @@ typedef _Bool bool;
 #endif /* __cplusplus */
 #endif /* __bool_true_false_are_defined */
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef float real;
 
 typedef struct CDynetParams CDynetParams;
 
@@ -40,7 +41,11 @@ typedef unsigned VariableIndex;
 
 typedef struct CComputationGraph CComputationGraph;
 
-typedef struct CExpression CExpression;
+typedef struct CExpression {
+  void* cg;
+  unsigned v_index;
+  unsigned graph_id;
+} CExpression;
 
 
 // ---------------- declarations from init.h ----------------
@@ -67,9 +72,9 @@ int CDim_size(CDim* d);
  */
 
 
-real C_as_scalar(const CTensor* t);
+float C_as_scalar(const CTensor* t);
 
-real* C_as_vector(const CTensor* v);
+float* C_as_vector(const CTensor* v);
 
 
 // ---------------- declarations from model.h ----------------
@@ -83,7 +88,7 @@ void CParameter_delete(CParameter* p);
 
 void CParameter_zero(CParameter* p);
 
-CDim CParameter_dim(CParameter* p);
+CDim* CParameter_dim(CParameter* p);
 
 CTensor* CParameter_values(CParameter* p);
 
@@ -102,7 +107,7 @@ void CLookupParameter_zero(CLookupParameter* p);
 
 CDim* CLookupParameter_dim(CLookupParameter* p);
 
-CTensor* CLookupParameter_values(CLookupParameter* p);
+// CTensor* CLookupParameter_values(CLookupParameter* p);
 
 void CLookupParameter_set_updated(CLookupParameter* p, bool b);
 
@@ -152,23 +157,21 @@ void CComputationGraph_backward(CComputationGraph* g, const CExpression* last);
 
 // ---------------- declarations from expr.h ----------------
 
-CExpression* C_input_scalar(CComputationGraph* g, real s);
-CExpression* C_input_vector(CComputationGraph* g, const CDim* d,
+CExpression C_input_scalar(CComputationGraph* g, float s);
+CExpression C_input_vector(CComputationGraph* g, const CDim* d,
                             const float* data);
-CExpression* C_parameter(CComputationGraph* g, CParameter* p);
-CExpression* C_lookup_parameter(CComputationGraph* g, CLookupParameter* p);
+CExpression C_parameter(CComputationGraph* g, CParameter* p);
+CExpression C_lookup_parameter(CComputationGraph* g, CLookupParameter* p);
 
-CExpression* C_op_add(const CExpression* x, const CExpression* y);
-CExpression* C_op_mul(const CExpression* x, const CExpression* y);
+CExpression C_op_add(const CExpression* x, const CExpression* y);
+CExpression C_op_mul(const CExpression* x, const CExpression* y);
 
-CExpression* C_tanh(const CExpression* x);
+CExpression C_tanh(const CExpression* x);
 
-CExpression* C_squared_distance(const CExpression* x, const CExpression* y);
-
+CExpression C_squared_distance(const CExpression* x, const CExpression* y);
 
 #ifdef __cplusplus
 } /* end extern "C" */
 #endif
 
-void hello();
-#endif  // DYNET_C_C_API_H_
+#endif  // DYNETC_C_API_H_

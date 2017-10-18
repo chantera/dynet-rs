@@ -10,11 +10,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -Wall -Werror")
 find_package(Eigen3 REQUIRED)
 find_package(DyNet REQUIRED)
 
-# set(DYNET_LIBRARIES "dynet")
-
 include_directories(
     ${PROJECT_SOURCE_DIR}
-    # ${PROJECT_BINARY_DIR}
+    ${PROJECT_BINARY_DIR}
     ${EIGEN3_INCLUDE_DIR}
     ${DYNET_INCLUDE_DIR}
 )

@@ -188,4 +188,3 @@ pub fn tanh(x: &Expression) -> Expression {
 pub fn squared_distance(x: &Expression, y: &Expression) -> Expression {
     unsafe { Expression { inner: &mut dy::C_squared_distance(x.inner, y.inner) } }
 }
-}

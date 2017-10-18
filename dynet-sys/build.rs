@@ -16,26 +16,12 @@ fn main() {
 }
 
 fn build() -> Result<(), Box<Error>> {
-    let lib_dir = try!(env::var("DYNET_LIBRARY_DIR").map_err(|e| {
-        format!(
-            "{}: Run with `DYNET_LIBRARY_DIR=/path/to/lib`",
-            e.to_string()
-        )
-    }));
-    let include_dir = try!(env::var("DYNET_INCLUDE_DIR").map_err(|e| {
-        format!(
-            "{}: Run with `DYNET_INCLUDE_DIR=/path/to/include`",
-            e.to_string()
-        )
-    }));
-
-    println!("cargo:rustc-link-lib=static=dynetc");
+    let lib_dir = env::var("DYNET_LIBRARY_DIR").unwrap_or("../c/build/dynetc".to_string());
+    println!("cargo:rustc-link-lib=dylib=dynetc");
     println!("cargo:rustc-link-search={}", lib_dir);
-    // println!("cargo:include={}", include_dir);
 
     let bindings = bindgen::Builder::default()
         .header("../c/dynetc/c_api.h")
-        // .clang_arg("-I../c")
         .rustfmt_bindings(false)
         .generate_comments(false)
         .generate()

@@ -3,7 +3,12 @@
 #include "dynetc/c_api.h"
 #include "dynetc/c_api_internal.h"
 
+#include "dynet/init.h"
+#include "dynet/dim.h"
+#include "dynet/tensor.h"
+#include "dynet/model.h"
 #include "dynet/dynet.h"
+#include "dynet/training.h"
 #include "dynet/expr.h"
 
 using dynet::ComputationGraph;
@@ -31,28 +36,90 @@ using dynet::Tensor;
 
 extern "C" {
 
+CDynetParams* CDynetParams_new() {
+  return new CDynetParams{};
+}
+
+void CDynetParams_delete(CDynetParams* p) {
+  delete p;
+}
+
+void C_initialize_from_params(CDynetParams* params) {
+  dynet::initialize(params->params);
+}
+
+void C_initialize(int argc, char* argv[]) {
+  dynet::initialize(argc, argv);
+}
+
 CDim* CDim_new() {
   return new CDim;
 }
 
-CDim* CDim_new_from_array(const long* x) {
-  return new CDim{std::vector<long>(x, x + sizeof x / sizeof x[0])};
+CDim* CDim_new_from_array(const long* x, size_t n) {
+  return new CDim{std::vector<long>(x, x + n)};
 }
 
 void CDim_delete(CDim* d) {
   delete d;
 }
 
-int CDim_size(CDim* d) {
+unsigned CDim_size(CDim* d) {
   return d->dim.size();
 }
 
+unsigned CDim_ndims(CDim* d) {
+  return d->dim.ndims();
+}
+
+unsigned CDim_rows(CDim* d) {
+  return d->dim.rows();
+}
+
+unsigned CDim_cols(CDim* d) {
+  return d->dim.cols();
+}
+
+unsigned CDim_batch_elems(CDim* d) {
+  return d->dim.batch_elems();
+}
+
+unsigned CDim_dim_size(CDim* d, unsigned i) {
+  return d->dim.size(i);
+}
+
+}  // end extern "C"
+
+namespace dynet {
+namespace {
+
+Tensor ctensor_to_tensor(const CTensor* src) {
+  return {src->d.dim, src->v, src->device, src->mem_pool};
+}
+
+CTensor* ctensor_from_tensor(const Tensor& src) {
+  return new CTensor{{src.d}, src.v, src.device, src.mem_pool};
+}
+
+}  // namespace
+}  // namespace dynet
+
+extern "C" {
+
+void CTensor_delete(CTensor* t) {
+  delete t;
+}
+
+CDim* CTensor_dim(CTensor* t) {
+  return &(t->d);
+}
+
 float C_as_scalar(const CTensor* t) {
-  return dynet::as_scalar(t->tensor);
+  return dynet::as_scalar(dynet::ctensor_to_tensor(t));
 }
 
 float* C_as_vector(const CTensor* v) {
-  return &(dynet::as_vector(v->tensor))[0];
+  return &(dynet::as_vector(dynet::ctensor_to_tensor(v)))[0];
 }
 
 CParameter* CParameter_new() {
@@ -72,7 +139,7 @@ CDim* CParameter_dim(CParameter* p) {
 }
 
 CTensor* CParameter_values(CParameter* p) {
-  return new CTensor{*(p->param.values())};
+  return dynet::ctensor_from_tensor(*(p->param.values()));
 }
 
 void CParameter_set_updated(CParameter* p, bool b) {
@@ -147,11 +214,24 @@ void CComputationGraph_delete(CComputationGraph* g) {
 
 const CTensor* CComputationGraph_forward(CComputationGraph* g,
                                          const CExpression* last) {
-  return new CTensor{g->graph.forward(*CAST_TO_EXPR_PTR(last))};
+  return dynet::ctensor_from_tensor(g->graph.forward(*CAST_TO_EXPR_PTR(last)));
 }
 
 void CComputationGraph_backward(CComputationGraph* g, const CExpression* last) {
   g->graph.backward(*CAST_TO_EXPR_PTR(last));
+}
+
+void CTrainer_update(void* t) {
+  reinterpret_cast<dynet::Trainer*>(t)->update();
+}
+
+CSimpleSGDTrainer* CSimpleSGDTrainer_new(CParameterCollection* m,
+                                         float learning_rate) {
+  return new CSimpleSGDTrainer{dynet::SimpleSGDTrainer{m->pc, learning_rate}};
+}
+
+void CSimpleSGDTrainer_delete(CSimpleSGDTrainer* t) {
+  delete t;
 }
 
 CExpression C_input_scalar(CComputationGraph* g, float s) {
@@ -160,8 +240,8 @@ CExpression C_input_scalar(CComputationGraph* g, float s) {
 }
 
 CExpression C_input_vector(CComputationGraph* g, const CDim* d,
-                           const float* data) {
-  auto v = std::vector<float>(data, data + sizeof data / sizeof data[0]);
+                           const float* data, size_t n) {
+  auto v = std::vector<float>(data, data + n);
   Expression expr = dynet::input(g->graph, d->dim, v);
   return *CAST_TO_CEXPR_PTR(&expr);
 }
@@ -180,28 +260,5 @@ EXPR_BINARY_OP(C_op_add, operator+)
 EXPR_BINARY_OP(C_op_mul, operator*)
 EXPR_UNARY_OP(C_tanh, tanh)
 EXPR_BINARY_OP(C_squared_distance, squared_distance)
-
-/*
-
-CExpression C_op_add(const CExpression* x, const CExpression* y) {
-  Expression expr = x->expr + y->expr;
-  return *reinterpret_cast<CExpression*>(&expr);
-}
-
-CExpression C_op_mul(const CExpression* x, const CExpression* y) {
-  Expression expr = x->expr * y->expr;
-  return *reinterpret_cast<CExpression*>(&expr);
-}
-
-CExpression C_tanh(const CExpression* x) {
-  Expression expr = dynet::tanh(x->expr);
-  return *reinterpret_cast<CExpression*>(&expr);
-}
-
-CExpression C_squared_distance(const CExpression* x, const CExpression* y) {
-  Expression expr = dynet::squared_distance(x->expr, y->expr);
-  return *reinterpret_cast<CExpression*>(&expr);
-}
- */
 
 }  // end extern "C"

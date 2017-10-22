@@ -515,10 +515,14 @@ pub struct CLookupParameter {
 pub struct CParameterCollection {
     _unused: [u8; 0],
 }
-pub type VariableIndex = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct CComputationGraph {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CSimpleSGDTrainer {
     _unused: [u8; 0],
 }
 #[repr(C)]
@@ -554,16 +558,52 @@ impl Clone for CExpression {
     fn clone(&self) -> Self { *self }
 }
 extern "C" {
+    pub fn CDynetParams_new() -> *mut CDynetParams;
+}
+extern "C" {
+    pub fn CDynetParams_delete(p: *mut CDynetParams);
+}
+extern "C" {
+    pub fn C_initialize_from_params(params: *mut CDynetParams);
+}
+extern "C" {
+    pub fn C_initialize(argc: ::std::os::raw::c_int,
+                        argv: *mut *mut ::std::os::raw::c_char);
+}
+extern "C" {
     pub fn CDim_new() -> *mut CDim;
 }
 extern "C" {
-    pub fn CDim_new_from_array(x: *const ::std::os::raw::c_long) -> *mut CDim;
+    pub fn CDim_new_from_array(x: *const ::std::os::raw::c_long, n: usize)
+     -> *mut CDim;
 }
 extern "C" {
     pub fn CDim_delete(d: *mut CDim);
 }
 extern "C" {
-    pub fn CDim_size(d: *mut CDim) -> ::std::os::raw::c_int;
+    pub fn CDim_size(d: *mut CDim) -> ::std::os::raw::c_uint;
+}
+extern "C" {
+    pub fn CDim_ndims(d: *mut CDim) -> ::std::os::raw::c_uint;
+}
+extern "C" {
+    pub fn CDim_rows(d: *mut CDim) -> ::std::os::raw::c_uint;
+}
+extern "C" {
+    pub fn CDim_cols(d: *mut CDim) -> ::std::os::raw::c_uint;
+}
+extern "C" {
+    pub fn CDim_batch_elems(d: *mut CDim) -> ::std::os::raw::c_uint;
+}
+extern "C" {
+    pub fn CDim_dim_size(d: *mut CDim, i: ::std::os::raw::c_uint)
+     -> ::std::os::raw::c_uint;
+}
+extern "C" {
+    pub fn CTensor_delete(t: *mut CTensor);
+}
+extern "C" {
+    pub fn CTensor_dim(t: *mut CTensor) -> *mut CDim;
 }
 extern "C" {
     pub fn C_as_scalar(t: *const CTensor) -> f32;
@@ -653,11 +693,22 @@ extern "C" {
                                       last: *const CExpression);
 }
 extern "C" {
+    pub fn CTrainer_update(t: *mut ::std::os::raw::c_void);
+}
+extern "C" {
+    pub fn CSimpleSGDTrainer_new(m: *mut CParameterCollection,
+                                 learning_rate: f32)
+     -> *mut CSimpleSGDTrainer;
+}
+extern "C" {
+    pub fn CSimpleSGDTrainer_delete(t: *mut CSimpleSGDTrainer);
+}
+extern "C" {
     pub fn C_input_scalar(g: *mut CComputationGraph, s: f32) -> CExpression;
 }
 extern "C" {
     pub fn C_input_vector(g: *mut CComputationGraph, d: *const CDim,
-                          data: *const f32) -> CExpression;
+                          data: *const f32, n: usize) -> CExpression;
 }
 extern "C" {
     pub fn C_parameter(g: *mut CComputationGraph, p: *mut CParameter)

@@ -5,11 +5,13 @@
 
 #include "dynetc/c_api.h"
 
-#include "dynet/dynet.h"
+#include "dynet/init.h"
 #include "dynet/dim.h"
-#include "dynet/expr.h"
-#include "dynet/model.h"
 #include "dynet/tensor.h"
+#include "dynet/model.h"
+#include "dynet/dynet.h"
+#include "dynet/training.h"
+#include "dynet/expr.h"
 
 struct CDynetParams {
   dynet::DynetParams params;
@@ -20,7 +22,10 @@ struct CDim {
 };
 
 struct CTensor {
-  dynet::Tensor tensor;
+  CDim d;
+  float* v;
+  dynet::Device* device;
+  dynet::DeviceMempool mem_pool;
 };
 
 struct CParameter {
@@ -37,6 +42,10 @@ struct CParameterCollection {
 
 struct CComputationGraph {
   dynet::ComputationGraph graph;
+};
+
+struct CSimpleSGDTrainer {
+  dynet::SimpleSGDTrainer trainer;
 };
 
 #endif  // DYNETC_C_API_INTERNAL_H_

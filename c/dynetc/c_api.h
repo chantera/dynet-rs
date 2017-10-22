@@ -37,9 +37,9 @@ typedef struct CLookupParameter CLookupParameter;
 
 typedef struct CParameterCollection CParameterCollection;
 
-typedef unsigned VariableIndex;
-
 typedef struct CComputationGraph CComputationGraph;
+
+typedef struct CSimpleSGDTrainer CSimpleSGDTrainer;
 
 typedef struct CExpression {
   void* cg;
@@ -50,6 +50,20 @@ typedef struct CExpression {
 
 // ---------------- declarations from init.h ----------------
 
+/**
+ * DynetParams
+ */
+CDynetParams* CDynetParams_new();
+
+void CDynetParams_delete(CDynetParams* p);
+
+/**
+ * functions
+ */
+void C_initialize_from_params(CDynetParams* params);
+
+void C_initialize(int argc, char* argv[]);
+
 
 // ---------------- declarations from dim.h ----------------
 
@@ -58,11 +72,21 @@ typedef struct CExpression {
  */
 CDim* CDim_new();
 
-CDim* CDim_new_from_array(const long* x);
+CDim* CDim_new_from_array(const long* x, size_t n);
 
 void CDim_delete(CDim* d);
 
-int CDim_size(CDim* d);
+unsigned CDim_size(CDim* d);
+
+unsigned CDim_ndims(CDim* d);
+
+unsigned CDim_rows(CDim* d);
+
+unsigned CDim_cols(CDim* d);
+
+unsigned CDim_batch_elems(CDim* d);
+
+unsigned CDim_dim_size(CDim* d, unsigned i);
 
 
 // ---------------- declarations from tensor.h ----------------
@@ -70,8 +94,13 @@ int CDim_size(CDim* d);
 /**
  * Tensor
  */
+void CTensor_delete(CTensor* t);
 
+CDim* CTensor_dim(CTensor* t);
 
+/**
+ * functions
+ */
 float C_as_scalar(const CTensor* t);
 
 float* C_as_vector(const CTensor* v);
@@ -154,12 +183,25 @@ void CComputationGraph_backward(CComputationGraph* g, const CExpression* last);
 
 // ---------------- declarations from training.h ----------------
 
+/**
+ * Trainer
+ */
+void CTrainer_update(void* t);
+
+/**
+ * SimpleSGDTrainer
+ */
+CSimpleSGDTrainer* CSimpleSGDTrainer_new(CParameterCollection* m,
+                                         float learning_rate);
+
+void CSimpleSGDTrainer_delete(CSimpleSGDTrainer* t);
+
 
 // ---------------- declarations from expr.h ----------------
 
 CExpression C_input_scalar(CComputationGraph* g, float s);
 CExpression C_input_vector(CComputationGraph* g, const CDim* d,
-                            const float* data);
+                            const float* data, size_t n);
 CExpression C_parameter(CComputationGraph* g, CParameter* p);
 CExpression C_lookup_parameter(CComputationGraph* g, CLookupParameter* p);
 

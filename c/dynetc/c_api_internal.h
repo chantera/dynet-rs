@@ -12,6 +12,8 @@
 #include "dynet/dynet.h"
 #include "dynet/training.h"
 #include "dynet/expr.h"
+#include "dynet/rnn.h"
+#include "dynet/lstm.h"
 
 struct CDynetParams {
   dynet::DynetParams params;
@@ -46,6 +48,14 @@ struct CComputationGraph {
 
 struct CSimpleSGDTrainer {
   dynet::SimpleSGDTrainer trainer;
+};
+
+struct CSimpleRNNBuilder {
+  dynet::SimpleRNNBuilder builder;
+};
+
+struct CVanillaLSTMBuilder {
+  dynet::VanillaLSTMBuilder builder;
 };
 
 #endif  // DYNETC_C_API_INTERNAL_H_

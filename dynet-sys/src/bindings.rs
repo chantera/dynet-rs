@@ -557,6 +557,16 @@ fn bindgen_test_layout_CExpression() {
 impl Clone for CExpression {
     fn clone(&self) -> Self { *self }
 }
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CSimpleRNNBuilder {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CVanillaLSTMBuilder {
+    _unused: [u8; 0],
+}
 extern "C" {
     pub fn CDynetParams_new() -> *mut CDynetParams;
 }
@@ -719,6 +729,25 @@ extern "C" {
                               p: *mut CLookupParameter) -> CExpression;
 }
 extern "C" {
+    pub fn C_lookup(g: *mut CComputationGraph, p: *mut CLookupParameter,
+                    index: ::std::os::raw::c_uint) -> CExpression;
+}
+extern "C" {
+    pub fn C_lookup_batch(g: *mut CComputationGraph, p: *mut CLookupParameter,
+                          indices: *const ::std::os::raw::c_uint)
+     -> CExpression;
+}
+extern "C" {
+    pub fn C_const_lookup(g: *mut CComputationGraph, p: *mut CLookupParameter,
+                          index: ::std::os::raw::c_uint) -> CExpression;
+}
+extern "C" {
+    pub fn C_const_lookup_batch(g: *mut CComputationGraph,
+                                p: *mut CLookupParameter,
+                                indices: *const ::std::os::raw::c_uint)
+     -> CExpression;
+}
+extern "C" {
     pub fn C_op_add(x: *const CExpression, y: *const CExpression)
      -> CExpression;
 }
@@ -732,6 +761,72 @@ extern "C" {
 extern "C" {
     pub fn C_squared_distance(x: *const CExpression, y: *const CExpression)
      -> CExpression;
+}
+extern "C" {
+    pub fn C_concatenate(xs: *const *const CExpression, n: usize,
+                         d: ::std::os::raw::c_uint) -> CExpression;
+}
+extern "C" {
+    pub fn CRNNBuilder_new_graph(builder: *mut ::std::os::raw::c_void,
+                                 cg: *mut CComputationGraph, update: bool_);
+}
+extern "C" {
+    pub fn CRNNBuilder_add_input(builder: *mut ::std::os::raw::c_void,
+                                 x: *const CExpression) -> CExpression;
+}
+extern "C" {
+    pub fn CSimpleRNNBuilder_new(layers: ::std::os::raw::c_uint,
+                                 input_dim: ::std::os::raw::c_uint,
+                                 hidden_dim: ::std::os::raw::c_uint,
+                                 model: *mut CParameterCollection,
+                                 support_lags: bool_)
+     -> *mut CSimpleRNNBuilder;
+}
+extern "C" {
+    pub fn CSimpleRNNBuilder_delete(builder: *mut CSimpleRNNBuilder);
+}
+extern "C" {
+    pub fn CSimpleRNNBuilder_start_new_sequence(builder:
+                                                    *mut CSimpleRNNBuilder);
+}
+extern "C" {
+    pub fn CSimpleRNNBuilder_start_new_sequence_with_initial_hidden_states(builder:
+                                                                               *mut CSimpleRNNBuilder,
+                                                                           h_0:
+                                                                               *const *const CExpression,
+                                                                           n:
+                                                                               usize);
+}
+extern "C" {
+    pub fn CVanillaLSTMBuilder_new(layers: ::std::os::raw::c_uint,
+                                   input_dim: ::std::os::raw::c_uint,
+                                   hidden_dim: ::std::os::raw::c_uint,
+                                   model: *mut CParameterCollection,
+                                   ln_lstm: bool_)
+     -> *mut CVanillaLSTMBuilder;
+}
+extern "C" {
+    pub fn CVanillaLSTMBuilder_delete(builder: *mut CVanillaLSTMBuilder);
+}
+extern "C" {
+    pub fn CVanillaLSTMBuilder_start_new_sequence(builder:
+                                                      *mut CVanillaLSTMBuilder);
+}
+extern "C" {
+    pub fn CVanillaLSTMBuilder_start_new_sequence_with_initial_hidden_states(builder:
+                                                                                 *mut CVanillaLSTMBuilder,
+                                                                             h_0:
+                                                                                 *const *const CExpression,
+                                                                             n:
+                                                                                 usize);
+}
+extern "C" {
+    pub fn CVanillaLSTMBuilder_set_dropout(builder: *mut CVanillaLSTMBuilder,
+                                           d: f32, d_r: f32);
+}
+extern "C" {
+    pub fn CVanillaLSTMBuilder_disable_dropout(builder:
+                                                   *mut CVanillaLSTMBuilder);
 }
 pub type __builtin_va_list = [__va_list_tag; 1usize];
 #[repr(C)]

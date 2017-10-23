@@ -1,8 +1,10 @@
 /* Copyright 2017 Hiroki Teranishi. All rights reserved. */
 
 #include "dynetc/c_api.h"
-#include "dynetc/c_api_internal.h"
 
+#include <vector>
+
+#include "dynetc/c_api_internal.h"
 #include "dynet/init.h"
 #include "dynet/dim.h"
 #include "dynet/tensor.h"
@@ -10,6 +12,8 @@
 #include "dynet/dynet.h"
 #include "dynet/training.h"
 #include "dynet/expr.h"
+#include "dynet/rnn.h"
+#include "dynet/lstm.h"
 
 using dynet::ComputationGraph;
 using dynet::Expression;
@@ -256,9 +260,136 @@ CExpression C_lookup_parameter(CComputationGraph* g, CLookupParameter* p) {
   return *CAST_TO_CEXPR_PTR(&expr);
 }
 
+CExpression C_lookup(CComputationGraph* g,
+                     CLookupParameter* p, unsigned index) {
+  Expression expr = dynet::lookup(g->graph, p->param, index);
+  return *CAST_TO_CEXPR_PTR(&expr);
+}
+
+CExpression C_lookup_batch(CComputationGraph* g,
+                           CLookupParameter* p, const unsigned* indices) {
+  Expression expr = dynet::lookup(g->graph, p->param, indices);
+  return *CAST_TO_CEXPR_PTR(&expr);
+}
+
+CExpression C_const_lookup(CComputationGraph* g,
+                           CLookupParameter* p, unsigned index) {
+  Expression expr = dynet::const_lookup(g->graph, p->param, index);
+  return *CAST_TO_CEXPR_PTR(&expr);
+}
+
+CExpression C_const_lookup_batch(CComputationGraph* g,
+                                 CLookupParameter* p, const unsigned* indices) {
+  Expression expr = dynet::const_lookup(g->graph, p->param, indices);
+  return *CAST_TO_CEXPR_PTR(&expr);
+}
+
 EXPR_BINARY_OP(C_op_add, operator+)
 EXPR_BINARY_OP(C_op_mul, operator*)
 EXPR_UNARY_OP(C_tanh, tanh)
 EXPR_BINARY_OP(C_squared_distance, squared_distance)
+
+#include <iostream>
+
+CExpression C_concatenate(const CExpression* const xs[], size_t n, unsigned d) {
+  auto v = std::vector<Expression>(n);
+  for (int i = 0; i < n; ++i) {
+    auto e = *CAST_TO_EXPR_PTR(xs[i]);
+    std::cout << e.dim() << std::endl;
+    v.push_back(e);
+  }
+  Expression expr = dynet::concatenate(v, d);
+  return *CAST_TO_CEXPR_PTR(&expr);
+}
+
+void CRNNBuilder_start_new_sequence_with_initial_hidden_states(
+    void* builder, const CExpression* const h_0[], size_t n) {
+  auto v = std::vector<Expression>(n);
+  for (int i = 0; i < n; ++i) {
+    v.push_back(*CAST_TO_EXPR_PTR(h_0[i]));
+  }
+  reinterpret_cast<dynet::RNNBuilder*>(builder)->start_new_sequence(v);
+}
+
+void CRNNBuilder_new_graph(void* builder, CComputationGraph* cg, bool update) {
+  reinterpret_cast<dynet::RNNBuilder*>(builder)->new_graph(cg->graph, update);
+}
+
+CExpression CRNNBuilder_add_input(void* builder, const CExpression* x) {
+  auto x_expr = *CAST_TO_EXPR_PTR(x); \
+  Expression expr =
+      reinterpret_cast<dynet::RNNBuilder*>(builder)->add_input(x_expr);
+  return *CAST_TO_CEXPR_PTR(&expr);
+}
+
+CSimpleRNNBuilder* CSimpleRNNBuilder_new(unsigned layers,
+                                        unsigned input_dim,
+                                        unsigned hidden_dim,
+                                        CParameterCollection* model,
+                                        bool support_lags) {
+  return new CSimpleRNNBuilder{
+      dynet::SimpleRNNBuilder{
+          layers, input_dim, hidden_dim, model->pc, support_lags}};
+}
+
+void CSimpleRNNBuilder_delete(CSimpleRNNBuilder* builder) {
+  delete builder;
+}
+
+void CSimpleRNNBuilder_start_new_sequence(CSimpleRNNBuilder* builder) {
+  builder->builder.start_new_sequence();
+}
+
+void CSimpleRNNBuilder_start_new_sequence_with_initial_hidden_states(
+    CSimpleRNNBuilder* builder, const CExpression* const h_0[], size_t n) {
+  auto v = std::vector<Expression>(n);
+  for (int i = 0; i < n; ++i) {
+    v.push_back(*CAST_TO_EXPR_PTR(h_0[i]));
+  }
+  builder->builder.start_new_sequence(v);
+}
+
+
+// ---------------- declarations from lstm.h ----------------
+
+/**
+ * SimpleRNNBuilder
+ */
+CVanillaLSTMBuilder* CVanillaLSTMBuilder_new(unsigned layers,
+                                             unsigned input_dim,
+                                             unsigned hidden_dim,
+                                             CParameterCollection* model,
+                                             bool ln_lstm) {
+  return new CVanillaLSTMBuilder{
+      dynet::VanillaLSTMBuilder{
+          layers, input_dim, hidden_dim, model->pc, ln_lstm}};
+}
+
+void CVanillaLSTMBuilder_delete(CVanillaLSTMBuilder* builder) {
+  delete builder;
+}
+
+void CVanillaLSTMBuilder_start_new_sequence(CVanillaLSTMBuilder* builder) {
+  builder->builder.start_new_sequence();
+}
+
+void CVanillaLSTMBuilder_start_new_sequence_with_initial_hidden_states(
+    CVanillaLSTMBuilder* builder, const CExpression* const h_0[], size_t n) {
+  auto v = std::vector<Expression>(n);
+  for (int i = 0; i < n; ++i) {
+    v.push_back(*CAST_TO_EXPR_PTR(h_0[i]));
+  }
+  builder->builder.start_new_sequence(v);
+}
+
+void CVanillaLSTMBuilder_set_dropout(CVanillaLSTMBuilder* builder,
+                                     float d,
+                                     float d_r) {
+  builder->builder.set_dropout(d, d_r);
+}
+
+void CVanillaLSTMBuilder_disable_dropout(CVanillaLSTMBuilder* builder) {
+  builder->builder.disable_dropout();
+}
 
 }  // end extern "C"

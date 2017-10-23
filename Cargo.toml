@@ -9,3 +9,6 @@ dynet-sys = { path = "dynet-sys" }
 
 [[example]]
 name = "xor"
+
+[[example]]
+name = "bilstmtagger"

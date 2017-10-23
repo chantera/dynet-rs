@@ -166,9 +166,21 @@ impl_drop!(Parameter, CParameter_delete);
 
 
 #[derive(Debug)]
+pub struct LookupParameter {
+    inner: *mut dy::CLookupParameter,
+}
+
+impl_drop!(LookupParameter, CLookupParameter_delete);
+
+
+#[derive(Debug)]
 pub struct Expression {
     pub expr: dy::CExpression,
     // pub inner: *mut dy::CExpression,
+}
+
+impl Drop for Expression {
+    fn drop(&mut self) {}
 }
 
 
@@ -185,6 +197,15 @@ impl ParameterCollection {
         unsafe {
             Parameter {
                 inner: dy::CParameterCollection_add_parameters(self.inner, d.inner) as *mut _,
+            }
+        }
+    }
+
+    pub fn add_lookup_parameters(&mut self, n: u32, d: &Dim) -> LookupParameter {
+        unsafe {
+            LookupParameter {
+                inner: dy::CParameterCollection_add_lookup_parameters(self.inner, n, d.inner) as
+                    *mut _,
             }
         }
     }
@@ -257,18 +278,90 @@ pub fn parameter(g: &mut ComputationGraph, p: &mut Parameter) -> Expression {
     unsafe { Expression { expr: dy::C_parameter(g.inner, p.inner) } }
 }
 
+pub fn lookup(g: &mut ComputationGraph, p: &mut LookupParameter, index: u32) -> Expression {
+    unsafe { Expression { expr: dy::C_lookup(g.inner, p.inner, index) } }
+}
+
+pub fn lookup_batch(
+    g: &mut ComputationGraph,
+    p: &mut LookupParameter,
+    indices: &Vec<u32>,
+) -> Expression {
+    unsafe { Expression { expr: dy::C_lookup_batch(g.inner, p.inner, indices.as_ptr()) } }
+}
+
+pub fn const_lookup(g: &mut ComputationGraph, p: &mut LookupParameter, index: u32) -> Expression {
+    unsafe { Expression { expr: dy::C_const_lookup(g.inner, p.inner, index) } }
+}
+
+pub fn const_lookup_batch(
+    g: &mut ComputationGraph,
+    p: &mut LookupParameter,
+    indices: &Vec<u32>,
+) -> Expression {
+    unsafe { Expression { expr: dy::C_const_lookup_batch(g.inner, p.inner, indices.as_ptr()) } }
+}
+
 impl ops::Add for Expression {
-    type Output = Self;
+    type Output = Expression;
 
     fn add(self, rhs: Expression) -> Expression {
         unsafe { Expression { expr: dy::C_op_add(&self.expr, &rhs.expr) } }
     }
 }
 
+impl<'a> ops::Add<Expression> for &'a Expression {
+    type Output = Expression;
+
+    fn add(self, rhs: Expression) -> Expression {
+        unsafe { Expression { expr: dy::C_op_add(&self.expr, &rhs.expr) } }
+    }
+}
+
+impl<'a> ops::Add<&'a Expression> for Expression {
+    type Output = Expression;
+
+    fn add(self, rhs: &'a Expression) -> Expression {
+        unsafe { Expression { expr: dy::C_op_add(&self.expr, &rhs.expr) } }
+    }
+}
+
+impl<'a, 'b> ops::Add<&'b Expression> for &'a Expression {
+    type Output = Expression;
+
+    fn add(self, rhs: &'b Expression) -> Expression {
+        unsafe { Expression { expr: dy::C_op_add(&self.expr, &rhs.expr) } }
+    }
+}
+
 impl ops::Mul for Expression {
-    type Output = Self;
+    type Output = Expression;
 
     fn mul(self, rhs: Expression) -> Expression {
+        unsafe { Expression { expr: dy::C_op_mul(&self.expr, &rhs.expr) } }
+    }
+}
+
+impl<'a> ops::Mul<Expression> for &'a Expression {
+    type Output = Expression;
+
+    fn mul(self, rhs: Expression) -> Expression {
+        unsafe { Expression { expr: dy::C_op_mul(&self.expr, &rhs.expr) } }
+    }
+}
+
+impl<'a> ops::Mul<&'a Expression> for Expression {
+    type Output = Expression;
+
+    fn mul(self, rhs: &'a Expression) -> Expression {
+        unsafe { Expression { expr: dy::C_op_mul(&self.expr, &rhs.expr) } }
+    }
+}
+
+impl<'a, 'b> ops::Mul<&'b Expression> for &'a Expression {
+    type Output = Expression;
+
+    fn mul(self, rhs: &'b Expression) -> Expression {
         unsafe { Expression { expr: dy::C_op_mul(&self.expr, &rhs.expr) } }
     }
 }
@@ -279,4 +372,102 @@ pub fn tanh(x: &Expression) -> Expression {
 
 pub fn squared_distance(x: &Expression, y: &Expression) -> Expression {
     unsafe { Expression { expr: dy::C_squared_distance(&x.expr, &y.expr) } }
+}
+
+pub fn concatenate(xs: &Vec<Expression>, d: u32) -> Expression {
+    unsafe {
+        let expr_ptrs: Vec<*const dy::CExpression> =
+            xs.iter().map(|x| &x.expr as *const _).collect();
+        Expression { expr: dy::C_concatenate(expr_ptrs.as_ptr(), expr_ptrs.len(), d) }
+    }
+}
+
+
+pub trait RNNBuilder {
+    fn new(layers: u32, input_dim: u32, hidden_dim: u32, m: &mut ParameterCollection) -> Self;
+
+    fn new_graph(&mut self, cg: &mut ComputationGraph, update: bool);
+
+    fn start_new_sequence(&mut self, h_0: Option<&Vec<Expression>>);
+
+    fn add_input(&mut self, x: &Expression) -> Expression;
+}
+
+
+macro_rules! impl_rnnbuilder {
+  ($name:ident,
+   $start_new_sequence:ident,
+   $start_new_sequence_with_initial_hidden_states:ident,
+   $($ximpl:tt)*) => {
+    impl RNNBuilder for $name {
+      fn new_graph(&mut self, cg: &mut ComputationGraph, update: bool) {
+        unsafe { dy::CRNNBuilder_new_graph(self.inner as *mut _, cg.inner, update as u8); }
+      }
+
+      fn start_new_sequence(&mut self, h_0: Option<&Vec<Expression>>) {
+        unsafe {
+          match h_0 {
+            Some(h) => {
+                let expr_ptrs: Vec<*const dy::CExpression> = 
+                    h.iter().map(|x| &x.expr as *const _).collect();
+                dy::$start_new_sequence_with_initial_hidden_states(
+                    self.inner as *mut _, expr_ptrs.as_ptr(), expr_ptrs.len()) 
+            }
+            None => dy::$start_new_sequence(self.inner as *mut _),
+          }
+          // let expr_ptrs: Vec<*const dy::CExpression> = h_0.iter().map(|&x| &x.expr as *const _).collect();
+        }
+      }
+
+      fn add_input(&mut self, x: &Expression) -> Expression {
+        unsafe { Expression { expr: dy::CRNNBuilder_add_input(self.inner as *mut _, &x.expr) } }
+      }
+
+      // fn drop(&mut self) {
+      //   unsafe {
+      //     dy::$drop_fn(self.inner);
+      //   }
+      // }
+
+      $($ximpl)*
+    }
+  }
+}
+
+
+pub struct VanillaLSTMBuilder {
+    inner: *mut dy::CVanillaLSTMBuilder,
+}
+
+impl_rnnbuilder!(VanillaLSTMBuilder,
+                 CVanillaLSTMBuilder_start_new_sequence,
+                 CVanillaLSTMBuilder_start_new_sequence_with_initial_hidden_states,
+    fn new(layers: u32, input_dim: u32, hidden_dim: u32, m: &mut ParameterCollection) -> Self {
+        unsafe {
+            VanillaLSTMBuilder {
+                inner: dy::CVanillaLSTMBuilder_new(
+                    layers,
+                    input_dim,
+                    hidden_dim,
+                    m.inner,
+                    false as u8,
+                ),
+            }
+        }
+    }
+);
+impl_drop!(VanillaLSTMBuilder, CVanillaLSTMBuilder_delete);
+
+impl VanillaLSTMBuilder {
+    pub fn set_dropout(&mut self, d: f32, d_r: f32) {
+        unsafe {
+            dy::CVanillaLSTMBuilder_set_dropout(self.inner, d, d_r);
+        }
+    }
+
+    pub fn disable_dropout(&mut self, d: f32, d_r: f32) {
+        unsafe {
+            dy::CVanillaLSTMBuilder_set_dropout(self.inner, d, d_r);
+        }
+    }
 }

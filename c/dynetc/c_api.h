@@ -47,6 +47,10 @@ typedef struct CExpression {
   unsigned graph_id;
 } CExpression;
 
+typedef struct CSimpleRNNBuilder CSimpleRNNBuilder;
+
+typedef struct CVanillaLSTMBuilder CVanillaLSTMBuilder;
+
 
 // ---------------- declarations from init.h ----------------
 
@@ -204,6 +208,13 @@ CExpression C_input_vector(CComputationGraph* g, const CDim* d,
                             const float* data, size_t n);
 CExpression C_parameter(CComputationGraph* g, CParameter* p);
 CExpression C_lookup_parameter(CComputationGraph* g, CLookupParameter* p);
+CExpression C_lookup(CComputationGraph* g, CLookupParameter* p, unsigned index);
+CExpression C_lookup_batch(CComputationGraph* g,
+                           CLookupParameter* p, const unsigned* indices);
+CExpression C_const_lookup(CComputationGraph* g,
+                           CLookupParameter* p, unsigned index);
+CExpression C_const_lookup_batch(CComputationGraph* g,
+                                 CLookupParameter* p, const unsigned* indices);
 
 CExpression C_op_add(const CExpression* x, const CExpression* y);
 CExpression C_op_mul(const CExpression* x, const CExpression* y);
@@ -211,6 +222,59 @@ CExpression C_op_mul(const CExpression* x, const CExpression* y);
 CExpression C_tanh(const CExpression* x);
 
 CExpression C_squared_distance(const CExpression* x, const CExpression* y);
+
+CExpression C_concatenate(const CExpression* const xs[], size_t n, unsigned d);
+
+
+// ---------------- declarations from rnn.h ----------------
+
+/**
+ * RNNBuilder
+ */
+void CRNNBuilder_new_graph(void* builder, CComputationGraph* cg, bool update);
+
+CExpression CRNNBuilder_add_input(void* builder, const CExpression* x);
+
+/**
+ * SimpleRNNBuilder
+ */
+CSimpleRNNBuilder* CSimpleRNNBuilder_new(unsigned layers,
+                                         unsigned input_dim,
+                                         unsigned hidden_dim,
+                                         CParameterCollection* model,
+                                         bool support_lags);
+
+void CSimpleRNNBuilder_delete(CSimpleRNNBuilder* builder);
+
+void CSimpleRNNBuilder_start_new_sequence(CSimpleRNNBuilder* builder);
+
+void CSimpleRNNBuilder_start_new_sequence_with_initial_hidden_states(
+    CSimpleRNNBuilder* builder, const CExpression* const h_0[], size_t n);
+
+
+// ---------------- declarations from lstm.h ----------------
+
+/**
+ * SimpleRNNBuilder
+ */
+CVanillaLSTMBuilder* CVanillaLSTMBuilder_new(unsigned layers,
+                                             unsigned input_dim,
+                                             unsigned hidden_dim,
+                                             CParameterCollection* model,
+                                             bool ln_lstm);
+
+void CVanillaLSTMBuilder_delete(CVanillaLSTMBuilder* builder);
+
+void CVanillaLSTMBuilder_start_new_sequence(CVanillaLSTMBuilder* builder);
+
+void CVanillaLSTMBuilder_start_new_sequence_with_initial_hidden_states(
+    CVanillaLSTMBuilder* builder, const CExpression* const h_0[], size_t n);
+
+void CVanillaLSTMBuilder_set_dropout(CVanillaLSTMBuilder* builder,
+                                     float d,
+                                     float d_r);
+
+void CVanillaLSTMBuilder_disable_dropout(CVanillaLSTMBuilder* builder);
 
 #ifdef __cplusplus
 } /* end extern "C" */

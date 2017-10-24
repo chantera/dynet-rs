@@ -290,15 +290,45 @@ EXPR_UNARY_OP(C_tanh, tanh)
 EXPR_BINARY_OP(C_squared_distance, squared_distance)
 
 #include <iostream>
+#include "dynet/nodes-concat.h"
 
 CExpression C_concatenate(const CExpression* const xs[], size_t n, unsigned d) {
-  auto v = std::vector<Expression>(n);
+  std::vector<Expression> v;
   for (int i = 0; i < n; ++i) {
     auto e = *CAST_TO_EXPR_PTR(xs[i]);
-    std::cout << e.dim() << std::endl;
     v.push_back(e);
   }
+  // std::cout << "size: " << v.size() << std::endl;
+  // for (Expression e : v) {
+  //   std::cout << e.pg << std::endl;
+  //   std::cout << e.i << std::endl;
+  //   std::cout << e.graph_id << std::endl;
+  //   std::cout << n << std::endl;
+  //   std::cout << e.dim() << std::endl;
+  //   std::cout << e.dim().batch_elems() << std::endl;
+  //   std::cout << e.pg->nodes.size() << std::endl;
+  // }
   Expression expr = dynet::concatenate(v, d);
+  // Expression expr;
+  // try {
+  //   // expr = dynet::detail::f<dynet::Concatenate>(v, d);
+  //   // expr = dynet::tanh(v[0]);
+  //   // std::vector<dynet::real> x1_values{0, 1};
+  //   // std::vector<dynet::real> x2_values{2, 3};
+  //   std::cout << "====" << std::endl;
+  //   std::cout << v[0].pg << std::endl;
+  //   std::cout << v[0].i << std::endl;
+  //   std::cout << v[0].graph_id << std::endl;
+  //   std::cout << v[1].pg << std::endl;
+  //   std::cout << v[1].i << std::endl;
+  //   std::cout << v[1].graph_id << std::endl;
+  //   expr = dynet::concatenate({v[0], v[1]}, 0);
+  //   // {dynet::input(*v[0].pg, {2}, &x1_values),
+  //   // dynet::input(*v[0].pg, {2}, &x2_values)}, 0);
+  //   std::cout << "====" << std::endl;
+  // } catch (std::exception &e) {
+  //   std::cerr << e.what() << std::endl;
+  // }
   return *CAST_TO_CEXPR_PTR(&expr);
 }
 

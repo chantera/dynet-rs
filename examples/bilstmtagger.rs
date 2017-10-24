@@ -4,6 +4,7 @@
 
 extern crate dynet;
 
+use std::collections::HashMap;
 use std::error::Error;
 use std::result::Result;
 use std::process::exit;
@@ -137,22 +138,66 @@ fn main() {
 fn run() -> Result<(), Box<Error>> {
     dynet::initialize();
 
-    const ITERATIONS: u32 = 30;
+    const ITERATIONS: u32 = 50;
 
     let mut m = ParameterCollection::new();
     let mut sgd = SimpleSGDTrainer::new(&mut m, 0.1);
 
     let mut tagger = Tagger::new(&mut m, 512, 100, 3, 400, 48, 0.5);
 
-    let sentence = vec![1u32, 2u32, 1u32, 5u32, 3u32, 2u32];
-    let ts = vec![0u32, 2u32, 0u32, 1u32, 2u32, 1u32];
+    let sentence = "Pierre Vinken , 61 years old , will join the board as a nonexecutive director Nov. 29 .";
+    let tags = vec![
+        "NNP",
+        "NNP",
+        ",",
+        "CD",
+        "NNS",
+        "JJ",
+        ",",
+        "MD",
+        "VB",
+        "DT",
+        "NN",
+        "IN",
+        "DT",
+        "JJ",
+        "NN",
+        "NNP",
+        "CD",
+        ".",
+    ];
+
+    let mut w2i: HashMap<String, u32> = HashMap::new();
+    let mut t2i: HashMap<String, u32> = HashMap::new();
+
+    let mut counter = 0u32;
+    let word_ids: Vec<u32> = sentence
+        .split(" ")
+        .map(|w| {
+            *w2i.entry(w.to_lowercase()).or_insert_with(|| {
+                let id = counter;
+                counter += 1;
+                id
+            })
+        })
+        .collect();
+    let mut counter = 0u32;
+    let tag_ids: Vec<u32> = tags.iter()
+        .map(|t| {
+            *t2i.entry(t.to_lowercase()).or_insert_with(|| {
+                let id = counter;
+                counter += 1;
+                id
+            })
+        })
+        .collect();
 
     for i in 0..ITERATIONS {
         let mut cg = ComputationGraph::new();
         tagger.new_graph(&mut cg, true);
-        let ys = tagger.run(&mut cg, &sentence);
+        let ys = tagger.run(&mut cg, &word_ids);
         let loss = ys.iter()
-            .zip(ts.iter())
+            .zip(tag_ids.iter())
             .map(|(y, t)| pickneglogsoftmax(y, *t))
             .sum();
         println!("loss: {}", as_scalar(&cg.forward(&loss)));

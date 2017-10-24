@@ -289,52 +289,19 @@ EXPR_BINARY_OP(C_op_mul, operator*)
 EXPR_UNARY_OP(C_tanh, tanh)
 EXPR_BINARY_OP(C_squared_distance, squared_distance)
 
-#include <iostream>
-#include "dynet/nodes-concat.h"
-
 CExpression C_concatenate(const CExpression* const xs[], size_t n, unsigned d) {
   std::vector<Expression> v;
   for (int i = 0; i < n; ++i) {
     auto e = *CAST_TO_EXPR_PTR(xs[i]);
     v.push_back(e);
   }
-  // std::cout << "size: " << v.size() << std::endl;
-  // for (Expression e : v) {
-  //   std::cout << e.pg << std::endl;
-  //   std::cout << e.i << std::endl;
-  //   std::cout << e.graph_id << std::endl;
-  //   std::cout << n << std::endl;
-  //   std::cout << e.dim() << std::endl;
-  //   std::cout << e.dim().batch_elems() << std::endl;
-  //   std::cout << e.pg->nodes.size() << std::endl;
-  // }
   Expression expr = dynet::concatenate(v, d);
-  // Expression expr;
-  // try {
-  //   // expr = dynet::detail::f<dynet::Concatenate>(v, d);
-  //   // expr = dynet::tanh(v[0]);
-  //   // std::vector<dynet::real> x1_values{0, 1};
-  //   // std::vector<dynet::real> x2_values{2, 3};
-  //   std::cout << "====" << std::endl;
-  //   std::cout << v[0].pg << std::endl;
-  //   std::cout << v[0].i << std::endl;
-  //   std::cout << v[0].graph_id << std::endl;
-  //   std::cout << v[1].pg << std::endl;
-  //   std::cout << v[1].i << std::endl;
-  //   std::cout << v[1].graph_id << std::endl;
-  //   expr = dynet::concatenate({v[0], v[1]}, 0);
-  //   // {dynet::input(*v[0].pg, {2}, &x1_values),
-  //   // dynet::input(*v[0].pg, {2}, &x2_values)}, 0);
-  //   std::cout << "====" << std::endl;
-  // } catch (std::exception &e) {
-  //   std::cerr << e.what() << std::endl;
-  // }
   return *CAST_TO_CEXPR_PTR(&expr);
 }
 
 void CRNNBuilder_start_new_sequence_with_initial_hidden_states(
     void* builder, const CExpression* const h_0[], size_t n) {
-  auto v = std::vector<Expression>(n);
+  std::vector<Expression> v;
   for (int i = 0; i < n; ++i) {
     v.push_back(*CAST_TO_EXPR_PTR(h_0[i]));
   }
@@ -372,7 +339,7 @@ void CSimpleRNNBuilder_start_new_sequence(CSimpleRNNBuilder* builder) {
 
 void CSimpleRNNBuilder_start_new_sequence_with_initial_hidden_states(
     CSimpleRNNBuilder* builder, const CExpression* const h_0[], size_t n) {
-  auto v = std::vector<Expression>(n);
+  std::vector<Expression> v;
   for (int i = 0; i < n; ++i) {
     v.push_back(*CAST_TO_EXPR_PTR(h_0[i]));
   }
@@ -405,7 +372,7 @@ void CVanillaLSTMBuilder_start_new_sequence(CVanillaLSTMBuilder* builder) {
 
 void CVanillaLSTMBuilder_start_new_sequence_with_initial_hidden_states(
     CVanillaLSTMBuilder* builder, const CExpression* const h_0[], size_t n) {
-  auto v = std::vector<Expression>(n);
+  std::vector<Expression> v;
   for (int i = 0; i < n; ++i) {
     v.push_back(*CAST_TO_EXPR_PTR(h_0[i]));
   }

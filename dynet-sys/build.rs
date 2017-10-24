@@ -16,7 +16,7 @@ fn main() {
 }
 
 fn build() -> Result<(), Box<Error>> {
-    let lib_dir = env::var("DYNET_LIBRARY_DIR").unwrap_or("../c/build/dynetc".to_string());
+    let lib_dir = env::var("DYNETC_LIBRARY_DIR").unwrap_or("../c/build/dynetc".to_string());
     println!("cargo:rustc-link-lib=dylib=dynetc");
     println!("cargo:rustc-link-search={}", lib_dir);
 

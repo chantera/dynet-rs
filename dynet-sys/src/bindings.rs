@@ -756,7 +756,14 @@ extern "C" {
      -> CExpression;
 }
 extern "C" {
+    pub fn C_sum(xs: *const *const CExpression, n: usize) -> CExpression;
+}
+extern "C" {
     pub fn C_tanh(x: *const CExpression) -> CExpression;
+}
+extern "C" {
+    pub fn C_pickneglogsoftmax(x: *const CExpression,
+                               v: ::std::os::raw::c_uint) -> CExpression;
 }
 extern "C" {
     pub fn C_squared_distance(x: *const CExpression, y: *const CExpression)

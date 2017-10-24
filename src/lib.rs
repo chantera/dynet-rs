@@ -3,8 +3,9 @@ extern crate dynet_sys as dy;
 
 use libc::c_char;
 use libc::c_int;
-use std::ops;
 use std::ffi::CString;
+use std::iter;
+use std::ops;
 // use std::slice;
 
 
@@ -181,6 +182,15 @@ pub struct Expression {
 
 impl Drop for Expression {
     fn drop(&mut self) {}
+}
+
+impl iter::Sum for Expression {
+    fn sum<I>(iter: I) -> Self
+    where
+        I: Iterator<Item = Self>,
+    {
+        sum(&iter.collect())
+    }
 }
 
 
@@ -366,8 +376,20 @@ impl<'a, 'b> ops::Mul<&'b Expression> for &'a Expression {
     }
 }
 
+pub fn sum(xs: &Vec<Expression>) -> Expression {
+    unsafe {
+        let expr_ptrs: Vec<*const dy::CExpression> =
+            xs.iter().map(|x| &x.expr as *const _).collect();
+        Expression { expr: dy::C_sum(expr_ptrs.as_ptr(), expr_ptrs.len()) }
+    }
+}
+
 pub fn tanh(x: &Expression) -> Expression {
     unsafe { Expression { expr: dy::C_tanh(&x.expr) } }
+}
+
+pub fn pickneglogsoftmax(x: &Expression, v: u32) -> Expression {
+    unsafe { Expression { expr: dy::C_pickneglogsoftmax(&x.expr, v) } }
 }
 
 pub fn squared_distance(x: &Expression, y: &Expression) -> Expression {

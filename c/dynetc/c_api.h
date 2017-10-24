@@ -219,8 +219,11 @@ CExpression C_const_lookup_batch(CComputationGraph* g,
 CExpression C_op_add(const CExpression* x, const CExpression* y);
 CExpression C_op_mul(const CExpression* x, const CExpression* y);
 
+CExpression C_sum(const CExpression* const xs[], size_t n);
+
 CExpression C_tanh(const CExpression* x);
 
+CExpression C_pickneglogsoftmax(const CExpression* x, unsigned v);
 CExpression C_squared_distance(const CExpression* x, const CExpression* y);
 
 CExpression C_concatenate(const CExpression* const xs[], size_t n, unsigned d);

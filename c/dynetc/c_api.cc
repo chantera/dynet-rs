@@ -286,14 +286,29 @@ CExpression C_const_lookup_batch(CComputationGraph* g,
 
 EXPR_BINARY_OP(C_op_add, operator+)
 EXPR_BINARY_OP(C_op_mul, operator*)
+
+CExpression C_sum(const CExpression* const xs[], size_t n) {
+  std::vector<Expression> v;
+  for (int i = 0; i < n; ++i) {
+    v.push_back(*CAST_TO_EXPR_PTR(xs[i]));
+  }
+  Expression expr = dynet::sum(v);
+  return *CAST_TO_CEXPR_PTR(&expr);
+}
+
 EXPR_UNARY_OP(C_tanh, tanh)
+
+CExpression C_pickneglogsoftmax(const CExpression* x, unsigned v) {
+  Expression expr = dynet::pickneglogsoftmax(*CAST_TO_EXPR_PTR(x), v);
+  return *CAST_TO_CEXPR_PTR(&expr);
+}
+
 EXPR_BINARY_OP(C_squared_distance, squared_distance)
 
 CExpression C_concatenate(const CExpression* const xs[], size_t n, unsigned d) {
   std::vector<Expression> v;
   for (int i = 0; i < n; ++i) {
-    auto e = *CAST_TO_EXPR_PTR(xs[i]);
-    v.push_back(e);
+    v.push_back(*CAST_TO_EXPR_PTR(xs[i]));
   }
   Expression expr = dynet::concatenate(v, d);
   return *CAST_TO_CEXPR_PTR(&expr);
